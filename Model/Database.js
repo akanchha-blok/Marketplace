@@ -20,7 +20,7 @@ client.connect();
 
 const userTableQuery = `
 CREATE TABLE users (
-    id serial not null primary key,
+    user_id serial not null primary key,
     name varchar not null,
     gender varchar not null,
     email varchar not null,
@@ -29,38 +29,43 @@ CREATE TABLE users (
 );
 `
 
-const userAddressTableQuery = `
+const userAddressTableQuery =`
 CREATE TABLE user_address (
     id serial not null primary key,
+    user_id serial not null,
     house_no integer not null,
     city varchar not null,
     state varchar not null,
     country varchar not null,
     pincode integer not null,
-    foreign key (id) references users(id)
+    foreign key (user_id) references users(user_id)
    
-);`
+);
+`
 
 const itemsTableQuery = `
 CREATE TABLE items (
     item_id serial not null primary key,
     item_name varchar not null,
     quantity integer not null,
-    price integer not null,
-    total_price integer not null,
-    foreign key (item_id) references users(id)
-   
-);`
+    price integer not null
+);
+`
 const orderitemsTableQuery = `
 CREATE TABLE order_items (
-    item_id serial not null primary key,
+    user_id  serial not null primary key,
+    order_id serial not null,
+    item_id serial not null,
     item_name varchar not null,
     quantity integer not null,
     price integer not null,
     payment varchar not null,
-    foreign key (item_id) references users(id)
+    foreign key (user_id) references users(user_id),
+    foreign key (item_id) references items(item_id)
+
    
-);`
+);
+`
 createTable(userTableQuery)
 createTable(userAddressTableQuery)
 createTable(orderitemsTableQuery)

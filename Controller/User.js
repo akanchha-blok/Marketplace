@@ -51,23 +51,25 @@ exports.login = async (req, res) => {
         const hash = bcrypt.hashSync(password, salt);
         console.log(hash)
 
-        const user = `SELECT email,password FROM users WHERE email = '${email}'`
-        const find = await connection.module.client.query(user)
-        if (!find.rows.length) {
+        const user = `SELECT email,password,user_id FROM users WHERE email = '${email}'`
+        const getUser = await connection.module.client.query(user)
+        const user_id = getUser.rows[0].user_id;
+        if (!getUser.rows.length) {
             res.status(403).json({ error: "user not find" })
         }
-        const match = await bcrypt.compare(password, find.rows[0].password);
+        const match = await bcrypt.compare(password, getUser.rows[0].password);
         if (match === false) {
             return res.json({ message: "Invalid password" });
         }
         else {
+
             console.log("Logged In")
 
-        }
+            console.log(process.env.JWT_SECRET_KEY);
+            const token = jwt.sign({ email, user_id }, process.env.JWT_SECRET_KEY, { expiresIn: process.env.EXPIRE_TILL });
+            res.status(200).send({ token })
 
-        console.log(process.env.JWT_SECRET_KEY);
-        const token = jwt.sign({ email }, process.env.JWT_SECRET_KEY, { expiresIn: process.env.EXPIRE_TILL });
-        res.status(200).send({ token })
+        }
 
         connection.module.client.end;
     }
@@ -108,22 +110,22 @@ exports.address = async (req, res) => {
 
         }
 
-        const maxIdQuery = `SELECT DISTINCT id FROM users WHERE email='${user.email}'`
-        console.log(maxIdQuery)
-        const maxIdResult = await connection.module.client.query(maxIdQuery);
-        let id = maxIdResult.rows[0].id
+        const userExist = `SELECT user_id FROM user_address WHERE user_id = '${user.user_id}'`
+        const find = await connection.module.client.query(userExist)
+        if (find.rows.length) {
+            throw ("already exist")
+        }
+        console.log(find)
 
-        const query = `INSERT INTO user_address(id,house_no,city,state,country,pincode) VALUES ('${id}','${house_no}','${city}','${state}','${country}','${pincode}')`
+        const query = `INSERT INTO user_address(id,house_no,city,state,country,pincode) VALUES ('${user.user_id}','${house_no}','${city}','${state}','${country}','${pincode}')`
         console.log(query)
         const view = await connection.module.client.query(query);
         if (view) {
-            console.log("updated")
+            return res.json({ message: "successfully insert" })
         }
         else {
             res.send('something went to wrong')
         }
-
-        res.send(query)
 
         connection.module.client.end;
     }
@@ -138,15 +140,7 @@ exports.mydetail = async (req, res) => {
         const user = req.user;
         console.log(user)
 
-
-        const maxIdQuery = `SELECT DISTINCT id FROM users WHERE email='${user.email}'`
-        console.log(maxIdQuery)
-        const maxIdResult = await connection.module.client.query(maxIdQuery);
-        let id = maxIdResult.rows[0].id
-
-        //   const test = `SELECT id,name,user_address FROM users,user_address WHERE users.email = '${user.email}' AND user_address.id=id`
-        // const test = `SELECT id,name FROM detail LEFT JOIN ON address WHERE detail.email = '${user.email}'`
-        const test = `SELECT users.id,users."name",user_address FROM users LEFT JOIN user_address ON user_address.id = user.id='${id}' `
+        const test = `SELECT users.user_id,users."name",user_address.house_no,user_address.city,user_address.state,user_address.country,user_address.pincode as address FROM users LEFT JOIN user_address ON user_address.user_id =users.user_id where users.user_id='${user.user_id}' `
         console.log(test)
         const myInfo = await connection.module.client.query(test);
         // res.json(myInfo.rows[0])

@@ -16,6 +16,8 @@ Router.post('/items',[User.valid],Items.addItem)
 
 Router.post('/order',[User.valid],Items.orderItem)
 
+Router.get('/myorder',[User.valid],Items.myOrder)
+
 
 
 
